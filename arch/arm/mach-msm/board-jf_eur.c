@@ -1594,7 +1594,7 @@ struct sii8240_platform_data sii8240_pdata = {
 	.power = sii8240_hw_onoff,
 	.hw_reset = sii8240_hw_reset,
 	.gpio_cfg = mhl_gpio_config,
-	.swing_level = 0x26,
+	.swing_level = 0x36,
 	.vbus_present = muic77693_mhl_cb,
 };
 
@@ -1957,11 +1957,12 @@ static void clear_ssp_gpio(void)
 		.inv_int_pol = 0,
 	};
 	struct pm_gpio ap_mcu_nrst_cfg = {
-		.direction = PM_GPIO_DIR_IN,
-		.pull = PM_GPIO_PULL_DN,
+		.direction = PM_GPIO_DIR_OUT,
+		.pull = PM_GPIO_PULL_NO,
 		.vin_sel = 2,
 		.function = PM_GPIO_FUNC_NORMAL,
 		.inv_int_pol = 0,
+		.out_strength = PM_GPIO_STRENGTH_HIGH,
 	};
 
 	pm8xxx_gpio_config(GPIO_AP_MCU_INT, &ap_mcu_int_cfg);
@@ -1969,6 +1970,7 @@ static void clear_ssp_gpio(void)
 	pm8xxx_gpio_config(GPIO_MCU_AP_INT_2, &mcu_ap_int_2_cfg);
 	if (system_rev >= 5)
 		pm8xxx_gpio_config(GPIO_MCU_NRST, &ap_mcu_nrst_cfg);
+	gpio_set_value_cansleep(GPIO_MCU_NRST, 0);
 	mdelay(1);
 	pr_info("[SSP] %s done\n", __func__);
 }
@@ -2004,6 +2006,7 @@ static int initialize_ssp_gpio(void)
 		.vin_sel = 2,
 		.function = PM_GPIO_FUNC_NORMAL,
 		.inv_int_pol = 0,
+		.out_strength = PM_GPIO_STRENGTH_HIGH,
 	};
 
 	pr_info("[SSP]%s\n", __func__);
@@ -2125,9 +2128,7 @@ static int ssp_check_changes(void)
 */
 static void ssp_get_positions(int *acc, int *mag)
 {
-	if (system_rev == BOARD_REV13)
-		*acc = MPU6500_TOP_RIGHT_UPPER;
-	else if (system_rev > BOARD_REV09)
+	if (system_rev > BOARD_REV09)
 		*acc = K330_TOP_LEFT_UPPER;
 	else if (system_rev > BOARD_REV04)
 		*acc = MPU6500_TOP_RIGHT_UPPER;
