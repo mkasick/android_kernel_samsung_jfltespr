@@ -398,8 +398,6 @@ inline void cancel_soft_reclaim(void)
 int get_soft_reclaim_status(void)
 {
 	int kcompcache_running = atomic_read(&s_reclaim.kcompcached_running);
-	if(kcompcache_running)
-		set_user_nice(s_reclaim.kcompcached, 0);
 	return kcompcache_running;
 }
 
@@ -452,7 +450,6 @@ static int do_compcache(void * nothing)
 
 		atomic_set(&s_reclaim.kcompcached_running, 0);
 		set_current_state(TASK_INTERRUPTIBLE);
-		set_user_nice(s_reclaim.kcompcached, 15);
 		schedule();
 	}
 

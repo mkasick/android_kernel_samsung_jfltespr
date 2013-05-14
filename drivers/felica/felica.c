@@ -1128,8 +1128,6 @@ static ssize_t felica_pon_read(struct file *file, char __user *buf, size_t len,
 	ret = gpio_get_value(GPIO_PINID_FELICA_PON);
 #elif defined(CONFIG_ARCH_APQ8064)
 	ret = ice_gpiox_get(GPIO_PINID_FELICA_PON);
-#else
-	ret = gpio_get_value(GPIO_PINID_FELICA_PON);
 #endif
 	if (ret == GPIO_VALUE_HIGH) {
 		retparam = FELICA_PON_WIRED;
