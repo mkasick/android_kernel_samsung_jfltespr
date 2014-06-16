@@ -1331,7 +1331,9 @@ static __devinit int max77693_charger_probe(struct platform_device *pdev)
 	struct max77693_platform_data *pdata = dev_get_platdata(iodev->dev);
 	struct max77693_charger_data *charger;
 	int ret = 0;
+#if defined(CONFIG_CHARGER_MAX77803) || defined(CONFIG_MACH_JF)
 	u8 reg_data;
+#endif
 
 	pr_info("%s: MAX77693 Charger driver probe\n", __func__);
 
@@ -1375,9 +1377,13 @@ static __devinit int max77693_charger_probe(struct platform_device *pdev)
 	wake_lock_init(&charger->recovery_wake_lock, WAKE_LOCK_SUSPEND,
 					       "charger-recovery");
 	INIT_DELAYED_WORK(&charger->recovery_work, max77693_recovery_work);
+
+#if defined(CONFIG_CHARGER_MAX77803) || defined(CONFIG_MACH_JF)
 	wake_lock_init(&charger->wpc_wake_lock, WAKE_LOCK_SUSPEND,
 					       "charger-wpc");
 	INIT_DELAYED_WORK(&charger->wpc_work, wpc_detect_work);
+#endif
+
 	ret = power_supply_register(&pdev->dev, &charger->psy_chg);
 	if (ret) {
 		pr_err("%s: Failed to Register psy_chg\n", __func__);
@@ -1400,8 +1406,11 @@ static __devinit int max77693_charger_probe(struct platform_device *pdev)
 	charger->wc_w_irq = pdata->irq_base + MAX77693_CHG_IRQ_WCIN_I;
 	ret = request_threaded_irq(charger->wc_w_irq,
 			NULL, wpc_charger_irq,
-			IRQF_TRIGGER_FALLING,
-			"wpc-int", charger);
+#if defined(CONFIG_MACH_JF)
+			IRQF_TRIGGER_FALLING,"wpc-int", charger);
+#else
+			0, "wpc-int", charger);
+#endif
 	if (ret) {
 		pr_err("%s: Failed to Reqeust IRQ\n", __func__);
 		goto err_wc_irq;
@@ -1446,8 +1455,13 @@ static __devinit int max77693_charger_probe(struct platform_device *pdev)
 		pr_err("%s: fail to request bypass IRQ: %d: %d\n",
 				__func__, charger->irq_bypass, ret);
 	return 0;
+
+#if defined(CONFIG_WIRELESS_CHARGING) ||\
+	defined(CONFIG_CHARGER_MAX77803) ||\
+	defined(CONFIG_MACH_JF)
 err_wc_irq:
 	free_irq(charger->pdata->chg_irq, NULL);
+#endif
 err_irq:
 	power_supply_unregister(&charger->psy_chg);
 err_power_supply_register:
