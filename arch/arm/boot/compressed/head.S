@@ -194,7 +194,11 @@ not_angel:
 		 * by the linker here, but it should preserve r7, r8, and r9.
 		 */
 
+/* CONFIG_CRYPTO_FIPS: Use the same .text section so that the address of
+ * the "start" label can be calculated. */
+#ifndef CONFIG_CRYPTO_FIPS
 		.text
+#endif
 
 #ifdef CONFIG_AUTO_ZRELADDR
 		@ determine final kernel image address
@@ -372,14 +376,25 @@ dtb_check_done:
 		 * the relocation code added. This avoids overwriting
 		 * ourself when the offset is small.
 		 */
+#ifdef CONFIG_CRYPTO_FIPS
+		add	r10, r10, #((reloc_code_end - start + 256) & ~255)
+#else
 		add	r10, r10, #((reloc_code_end - restart + 256) & ~255)
+#endif
 		bic	r10, r10, #255
 
 		/* Get start of code we want to copy and align it down. */
+#ifdef CONFIG_CRYPTO_FIPS
+		adr	r5, start
+#else
 		adr	r5, restart
+#endif
 		bic	r5, r5, #31
 
 		sub	r9, r6, r5		@ size to copy
+#ifdef CONFIG_CRYPTO_FIPS
+		add	r9, r9, #32		@ zImage HMAC
+#endif
 		add	r9, r9, #31		@ rounded up to a multiple
 		bic	r9, r9, #31		@ ... of 32 bytes
 		add	r6, r9, r5
@@ -570,8 +585,7 @@ copy_compressed:
 		PUSH {r1, r2, r4, r8, r9, r10}
 
 		// source address - zImage load address
-		movw r1, #:lower16:FIPS_KERNEL_RAM_BASE
-		movt r1, #:upper16:FIPS_KERNEL_RAM_BASE
+		adr	r1, start
 
 		// destination address - location where zImage copy will be made
 		movw r9, #:lower16:CONFIG_CRYPTO_FIPS_INTEG_COPY_ADDRESS
